@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍗 AYAM GORENG — OSINT Platform</title>
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box; font-family:system-ui, -apple-system, sans-serif;}
+        
+        :root {
+            --emas: #ffcc00;
+            --oranye: #ff9500;
+            --coklat: #b36b00;
+            --putih: #fff9e8;
+            --abu: #d4b888;
+            --hijau: #00e676;
+            --merah: #ff5252;
+            --hitam: #1a1200;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(180deg, #3d2e00 0%, #2b1f00 50%, #1a1200 100%);
+            color: var(--putih);
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Lampu kedip latar */
+        .stars {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .star {
+            position: absolute;
+            width: 3px; height: 3px;
+            background: var(--emas);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--emas);
+            animation: twinkle 2.5s infinite ease-in-out;
+        }
+        @keyframes twinkle {
+            0%,100% { opacity: 0.15; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            max-width: 440px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Halaman Login */
+        .logo-section {
+            text-align: center;
+            margin: 40px 0 30px;
+        }
+        .logo-icon { font-size: 64px; }
+        .logo-text {
+            font-size: 38px;
+            font-weight: 900;
+            background: linear-gradient(90deg, #ffcc00, #ff9500, #b36b00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .logo-sub { color: var(--abu); font-size: 14px; margin-top: 5px; }
+
+        .status-bar {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-bottom: 25px; font-size: 14px; color: var(--abu);
+        }
+        .status-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: var(--hijau); box-shadow: 0 0 8px var(--hijau);
+            animation: pulse 1.5s infinite;
+        }
+        .status-dot.off { background: var(--merah); box-shadow: 0 0 8px var(--merah); }
+        @keyframes pulse {
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .card {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,204,0,0.15);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .input-group { margin-bottom: 16px; }
+        label {
+            display: block; margin-bottom: 8px;
+            color: var(--abu); font-size: 14px;
+        }
+        input {
+            width: 100%; padding: 14px 16px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,204,0,0.25);
+            border-radius: 10px;
+            color: var(--putih);
+            font-size: 15px;
+            outline: none;
+            transition: 0.2s;
+        }
+        input:focus { border-color: var(--emas); box-shadow: 0 0 0 3px rgba(255,204,0,0.1); }
+
+        button {
+            width: 100%; padding: 14px;
+            border: none; border-radius: 10px;
+            font-size: 15px; font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:active { transform: scale(0.98); }
+
+        .btn-primary { background: linear-gradient(90deg, #ff9500, #ffcc00); color: #2b1f00; margin-bottom: 10px; }
+        .btn-success { background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.25); color: #00e676; margin-bottom: 10px; }
+        .btn-secondary { background: rgba(255,204,0,0.06); border: 1px solid rgba(255,204,0,0.2); color: var(--emas); margin-bottom: 20px; }
+        .btn-danger { background: rgba(255,82,82,0.1); color: #ff6b6b; border: none; padding: 8px 16px; width: auto; }
+        .btn-sm { padding: 8px 12px; font-size: 13px; width: auto; }
+
+        .error { color: var(--merah); text-align: center; margin-top: 10px; font-size: 14px; display: none; }
+        .sukses { color: var(--hijau); text-align: center; margin-top: 10px; font-size: 14px; display: none; }
+
+        /* Dashboard */
+        .dashboard { display: none; }
+        .dash-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .dash-title { font-size: 20px; color: var(--emas); }
+        .user-badge {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .user-name { font-size: 14px; }
+        .user-role {
+            font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 600;
+        }
+        .role-admin { background: rgba(255,204,0,0.2); color: var(--emas); }
+        .role-reseller { background: rgba(0,230,118,0.15); color: #69f0ae; }
+        .role-member { background: rgba(150,150,150,0.15); color: #ccc; }
+
+        .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+        .tab-btn {
+            flex: 1; min-width: 80px; padding: 10px 6px;
+            background: transparent; border: 1px solid rgba(255,204,0,0.15);
+            color: var(--abu); border-radius: 8px; font-size: 11px;
+        }
+        .tab-btn.active { border-color: var(--emas); color: var(--emas); background: rgba(255,204,0,0.05); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from {opacity:0; transform: translateY(5px);} to {opacity:1; transform: translateY(0);} }
+
+        .card h4 { color: var(--emas); margin-bottom: 12px; font-size: 14px; }
+        .card input { margin-bottom: 10px; }
+        .result {
+            margin-top: 10px; padding: 12px;
+            background: rgba(0,0,0,0.25); border-radius: 8px;
+            font-size: 12px; line-height: 1.8; color: #eee;
+            display: none; white-space: pre-wrap;
+        }
+        .result.show { display: block; }
+
+        .account-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 10px; background: rgba(0,0,0,0.2); border-radius: 6px;
+            margin-bottom: 6px; font-size: 13px;
+        }
+
+        .footer-links {
+            display: flex; justify-content: center; gap: 30px;
+            margin-top: 30px; padding-top: 20px;
+            border-top: 1px solid rgba(255,204,0,0.1);
+        }
+        .footer-link {
+            text-align: center; color: var(--abu); font-size: 12px; text-decoration: none;
+        }
+        .footer-link:hover { color: var(--emas); }
+        .copyright {
+            text-align: center; margin-top: 15px; font-size: 11px; color: rgba(212,184,136,0.4);
+        }
+
+        .hidden { display: none !important; }
+        .row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .row button { flex: 1; min-width: 120px; }
+        .desc-text { text-align: center; color: var(--abu); font-size: 13px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <!-- Lampu kedip latar -->
+    <div class="stars" id="starsContainer"></div>
+    <script>
+        for(let i=0; i<80; i++){
+            const s=document.createElement('div');
+            s.className='star';
+            s.style.left=Math.random()*100+'%';
+            s.style.top=Math.random()*100+'%';
+            s.style.animationDelay=Math.random()*3+'s';
+            s.style.width=(Math.random()*2+1)+'px';
+            s.style.height=s.style.width;
+            document.getElementById('starsContainer').appendChild(s);
+        }
+    </script>
+
+    <div class="container">
+        <!-- HALAMAN LOGIN -->
+        <div id="halamanLogin">
+            <div class="logo-section">
+                <div class="logo-icon">🍗</div>
+                <h1 class="logo-text">AYAM GORENG</h1>
+                <p class="logo-sub">OSINT PLATFORM · TERPERCAYA · LENGKAP</p>
+            </div>
+
+            <div class="status-bar">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Sistem Sedang Aktif</span>
+            </div>
+
+            <div class="card">
+                <p class="desc-text">Silakan masuk untuk mengakses sistem</p>
+                
+                <div class="input-group">
+                    <label>👤 Username</label>
+                    <input type="text" id="inputUser" placeholder="Masukkan username" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label>🔒 Password</label>
+                    <input type="password" id="inputPass" placeholder="Masukkan password" onkeypress="if(event.key==='Enter')login()">
+                </div>
+
+                <button class="btn-primary" onclick="login()">➡️ MASUK</button>
+                <div class="error" id="pesanError"></div>
+                <div class="sukses" id="pesanSukses"></div>
+            </div>
+
+            <button class="btn-success" onclick="window.open('https://wa.me/6283159105525?text=Halo+saya+ingin+membeli+akses+AYAM+GORENG+OSINT','_blank')">🛒 BELI AKSES</button>
+            <button class="btn-secondary" onclick="window.open('https://wa.me/6283159105525?text=Halo+saya+butuh+bantuan+AYAM+GORENG','_blank')">🤖 HUBUNGI SUPPORT</button>
+
+            <div class="footer-links">
+                <a href="https://www.tiktok.com/@dak_boy09" target="_blank" class="footer-link">🎵 TikTok<br>@dak_boy09</a>
+                <a href="https://t.me/Dakboy12" target="_blank" class="footer-link">✈️ Telegram<br>@Dakboy12</a>
+            </div>
+            <p class="copyright">© 2026 AYAM GORENG OSINT — Gunakan dengan bijak</p>
+        </div>
+
+        <!-- DASHBOARD UTAMA -->
+        <div id="halamanDashboard" class="dashboard">
+            <div class="dash-header">
+                <h2 class="dash-title">🍗 AYAM GORENG</h2>
+                <div class="user-badge">
+                    <span class="user-name" id="namaPengguna"></span>
+                    <span class="user-role" id="rolePengguna"></span>
+                    <button class="btn-danger btn-sm" onclick="keluar()">✕</button>
+                </div>
+            </div>
+
+            <!-- Panel Admin Saja -->
+            <div id="panelAdmin" class="card hidden">
+                <h4>⚙️ PENGATURAN SISTEM — ADMIN ONLY</h4>
+                <div class="row">
+                    <button class="btn-success" onclick="ubahStatusSistem(true)">🟢 NYALAKAN SISTEM</button>
+                    <button class="btn-danger" onclick="ubahStatusSistem(false)">🔴 MATIKAN SISTEM</button>
+                </div>
+                <p style="font-size:11px; color:#888; margin-top:8px;">⚠️ Mematikan sistem akan menolak semua login pengguna lain</p>
+            </div>
+
+            <!-- Panel Kelola Akun — Admin & Reseller -->
+            <div id="panelAkun" class="card hidden">
+                <h4>👤 KELOLA AKUN PENGGUNA</h4>
+                <div id="formBuatAkun" class="hidden" style="margin-bottom:15px;">
+                    <input type="text" id="userBaru" placeholder="Username baru">
+                    <input type="password" id="passBaru" placeholder="Password baru">
+                    <div style="margin-bottom:10px;">
+                        <label style="display:inline; margin-right:10px;"><input type="radio" name="roleBaru" value="member" checked> Member</label>
+                        <label style="display:inline;"><input type="radio" name="roleBaru" value="reseller"> Reseller</label>
+                    </div>
+                    <button class="btn-primary" style="width:auto; padding:8px 16px; font-size:13px;" onclick="buatAkun()">✅ BUAT AKUN</button>
+                </div>
+                <button class="btn-secondary btn-sm" style="margin-bottom:10px;" onclick="document.getElementById('formBuatAkun').classList.toggle('hidden')">+ TAMBAH AKUN</button>
+                <p style="font-size:11px; color:#888; margin-bottom:8px;">📋 DAFTAR PENGGUNA:</p>
+                <div id="daftarAkun"></div>
+            </div>
+
+            <!-- Menu Tab OSINT -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="hp">📱 No HP</button>
+                <button class="tab-btn" data-tab="sosmed">📲 Sosmed</button>
+                <button class="tab-btn" data-tab="email">📧 Email</button>
+                <button class="tab-btn" data-tab="domain">🌐 Domain/IP</button>
+                <button class="tab-btn" data-tab="lokasi">📍 Lokasi</button>
+                <button class="tab-btn" data-tab="tools">🔧 Tools</button>
+            </div>
+
+            <!-- Tab No HP -->
+            <div id="tab-hp" class="tab-content active">
+                <div class="card">
+                    <h4>📡 Analisis Nomor Telepon</h4>
+                    <input type="text" id="inpNo" placeholder="Contoh: 0812xxxx / +62812xxxx">
+                    <button class="btn-primary" onclick="cekNomor()">🔍 CEK NOMOR</button>
+                    <div class="result" id="hasilNo"></div>
+                </div>
+                <div class="card">
+                    <h4>💬 Cek & Buka WhatsApp</h4>
+                    <input type="text" id="inpWA" placeholder="Masukkan nomor">
+                    <button class="btn-success" onclick="bukaWA()">🟢 BUKA CHAT WA</button>
+                </div>
+                <div class="card">
+                    <h4>🔄 Konversi Format Nomor</h4>
+                    <input type="text" id="inpConv" placeholder="Masukkan nomor apa saja">
+                    <button class="btn-secondary" onclick="formatNomor()">🔄 KONVERSI</button>
+                    <div class="result" id="hasilConv"></div>
+                </div>
+                <div class="card">
+                    <h4>🔍 Truecaller — Nama Pemilik</h4>
+                    <input type="text" id="inpTrue" placeholder="Masukkan nomor">
+                    <button class="btn-primary" onclick="bukaLink('https://www.truecaller.com/search/', 'inpTrue')">CEK DI TRUECALLER</button>
+                </div>
+                <div class="card">
+                    <h4>🌍 Cek Operator & Negara</h4>
+                    <input type="text" id="inpOp" placeholder="Masukkan nomor">
+                    <button class="btn-secondary" onclick="cekOperator()">CEK OPERATOR</button>
+                    <div class="result" id="hasilOp"></div>
+                </div>
+                <div class="card">
+                    <h4>📍 HLR Lookup — Asal Kartu</h4>
+                    <input type="text" id="inpHlr" placeholder="Masukkan nomor">
+                    <button class="btn-primary" onclick="bukaLink('https://www.hlr-lookup.com/en/search?q=', 'inpHlr')">CEK LOKASI KARTU</button>
+                </div>
+            </div>
+
+            <!-- Tab Sosmed -->
+            <div id="tab-sosmed" class="tab-content">
+                <div class="card">
+                    <h4>🔎 Cek Username Semua Platform</h4>
+                    <input type="text" id="inpUser" placeholder="Username tanpa @">
+                    <button class="btn-primary" onclick="bukaLink('https://namechk.com/?q=', 'inpUser')">CEK KEBERADAAN AKUN</button>
+                </div>
+                <div class="card">
+                    <h4>📸 Instagram Profil</h4>
+                    <input type="text" id="inpIg" placeholder="Username Instagram">
+                    <button class="btn-secondary" onclick="bukaLink('https://www.instagram.com/', 'inpIg')">BUKA PROFIL</button>
+                </div>
+                <div class="card">
+                    <h4>🐦 X / Twitter Profil</h4>
+                    <input type="text" id="inpX" placeholder="Username X">
+                    <button class="btn-primary" onclick="bukaLink('https://x.com/', 'inpX')">BUKA PROFIL</button>
+                </div>
+                <div class="card">
+                    <h4>📘 Facebook — Cari Orang</h4>
+                    <input type="text" id="inpFb" placeholder="Nama lengkap atau ID">
+                    <button class="btn-secondary" onclick="bukaLink('https://www.facebook.com/search/people?q=', 'inpFb')">CARI ORANG</button>
+                </div>
+                <div class="card">
+                    <h4>🎵 TikTok — Cari Akun</h4>
+                    <input type="text" id="inpTt" placeholder="Username atau nama">
+                    <button class="btn-primary" onclick="bukaLink('https://www.tiktok.com/search/user?q=', 'inpTt')">CARI AKUN</button>
+                </div>
+                <div class="card">
+                    <h4>💼 LinkedIn — Profil Profesional</h4>
+                    <input type="text" id="inpLi" placeholder="Nama atau username">
+                    <button class="btn-secondary" onclick="bukaLink('https://www.linkedin.com/search/results/people/?keywords=', 'inpLi')">CARI PROFIL</button>
+                </div>
+                <div class="card">
+                    <h4>🎮 GitHub — Profil Developer</h4>
+                    <input type="text" id="inpGh" placeholder="Username GitHub">
+                    <button class="btn-primary" onclick="bukaLink('https://github.com/', 'inpGh')">BUKA PROFIL</button>
+                </div>
+                <div class="card">
+                    <h4>📺 YouTube — Cari Channel</h4>
+                    <input type="text" id="inpYt" placeholder="Nama channel">
+                    <button class="btn-secondary" onclick="bukaLink('https://www.youtube.com/@', 'inpYt')">BUKA CHANNEL</button>
+                </div>
+            </div>
+
+            <!-- Tab Email -->
+            <div id="tab-email" class="tab-content">
+                <div class="card">
+                    <h4>✅ Validasi Format Email</h4>
+                    <input type="text" id="inpEmail" placeholder="contoh@gmail.com">
+                    <button class="btn-primary" onclick="cekEmail()">CEK FORMAT</button>
+                    <div class="result" id="hasilEmail"></div>
+                </div>
+                <div class="card">
+                    <h4>🔒 Cek Kebocoran Data Email</h4>
+                    <input type="text" id="inpBocor" placeholder="Email yang dicek">
+                    <button class="btn-secondary" onclick="bukaLink('https://haveibeenpwned.com/account/', 'inpBocor')">CEK DI HIBP</button>
+                </div>
+                <div class="card">
+                    <h4>📧 WHOIS Domain Email</h4>
+                    <input type="text" id="inpDom" placeholder="gmail.com / yahoo.com">
+                    <button class="btn-primary" onclick="bukaLink('https://www.whois.com/whois/', 'inpDom')">CEK INFO DOMAIN</button>
+                </div>
+                <div class="card">
+                    <h4>🔍 Reputasi Email</h4>
+                    <input type="text" id="inpRep" placeholder="Email yang dicek">
+                    <button class="btn-secondary" onclick="bukaLink('https://emailrep.io/', 'inpRep')">CEK REPUTASI</button>
+                </div>
+            </div>
+
+            <!-- Tab Domain & IP -->
+            <div id="tab-domain" class="tab-content">
+                <div class="card">
+                    <h4>🌐 WHOIS Domain</h4>
+                    <input type="text" id="inpWhois" placeholder="google.com">
+                    <button class="btn-primary" onclick="bukaLink('https://www.whois.com/whois/', 'inpWhois')">CEK DATA DOMAIN</button>
+                </div>
+                <div class="card">
+                    <h4>📍 Lokasi & Info IP</h4>
+                    <input type="text" id="inpIp" placeholder="8.8.8.8">
+                    <button class="btn-secondary" onclick="bukaLink('https://ipinfo.io/', 'inpIp')">CEK LOKASI IP</button>
+                </div>
+                <div class="card">
+                    <h4>🔄 DNS Lookup — Semua Record</h4>
+                    <input type="text" id="inpDns" placeholder="google.com">
+                    <button class="btn-primary" onclick="bukaLink('https://www.nslookup.io/', 'inpDns')">CEK RECORD DNS</button>
+                </div>
+                <div class="card">
+                    <h4>⏱️ Ping & Koneksi Server</h4>
+                    <input type="text" id="inpPing" placeholder="google.com / 8.8.8.8">
+                    <button class="btn-secondary" onclick="bukaLink('https://www.uptrends.com/tools/network-tools/ping-test/', 'inpPing')">CEK KONEKSI</button>
+                </div>
+                <div class="card">
+                    <h4>🔬 Scan Keamanan Website</h4>
+                    <input type="text" id="inpVir" placeholder="contoh.com">
+                    <button class="btn-primary" onclick="bukaLink('https://www.virustotal.com/gui/search/', 'inpVir')">SCAN DI VIRUSTOTAL</button>
+                </div>
+                <div class="card">
+                    <h4>📜 Arsip Internet — Riwayat Web</h4>
+                    <input type="text" id="inpArsip" placeholder="contoh.com">
+                    <button class="btn-secondary" onclick="bukaLink('https://web.archive.org/web/*/', 'inpArsip')">LIHAT RIWAYAT</button>
+                </div>
+                <div class="card">
+                    <h4>🛡️ Cek Blacklist IP/Domain</h4>
+                    <input type="text" id="inpBl" placeholder="IP atau Domain">
+                    <button class="btn-primary" onclick="bukaLink('https://www.spamhaus.org/lookup/', 'inpBl')">CEK STATUS</button>
+                </div>
+            </div>
+
+            <!-- Tab Lokasi -->
+            <div id="tab-lokasi" class="tab-content">
+                <div class="card">
+                    <h4>🗺️ Buka Koordinat di Google Maps</h4>
+                    <input type="text" id="inpKoord" placeholder="-6.175, 106.827">
+                    <button class="btn-primary" onclick="bukaPeta()">BUKA DI MAPS</button>
+                </div>
+                <div class="card">
+                    <h4>🏙️ Cek Kode Pos & Daerah</h4>
+                    <input type="text" id="inpKp" placeholder="Nama daerah atau kode pos">
+                    <button class="btn-secondary" onclick="cariKodePos()">CARI DI MAPS</button>
+                </div>
+                <div class="card">
+                    <h4>🌤️ Cek Cuaca Saat Ini</h4>
+                    <input type="text" id="inpCuaca" placeholder="Nama kota">
+                    <button class="btn-primary" onclick="cekCuaca()">CEK CUACA</button>
+                </div>
+                <div class="card">
+                    <h4>📏 Jarak & Rute Antar Kota</h4>
+                    <input type="text" id="inpDari" placeholder="Dari kota...">
+                    <input type="text" id="inpKe" placeholder="Ke kota...">
+                    <button class="btn-secondary" onclick="bukaRute()">BUKA RUTE</button>
+                </div>
+            </div>
+
+            <!-- Tab Tools -->
+            <div id="tab-tools" class="tab-content">
+                <div class="card">
+                    <h4>🔐 Generator Password Kuat</h4>
+                    <button class="btn-primary" onclick="buatPassword()">BUAT PASSWORD</button>
+                    <div class="result" id="hasilPass"></div>
+                </div>
+                <div class="card">
+                    <h4>🔓 Enkripsi / Dekripsi Teks (Base64)</h4>
+                    <input type="text" id="inpEnkrip" placeholder="Teks yang akan diproses">
+                    <div class="row">
+                        <button class="btn-primary" onclick="enkripTeks()">🔒 ENKRIPSI</button>
+                        <button class="btn-secondary" onclick="dekripTeks()">🔓 DEKRIPSI</button>
+                    </div>
+                    <div class="result" id="hasilEnkrip"></div>
+                </div>
+                <div class="card">
+                    <h4>📝 Catatan Pribadi</h4>
+                    <textarea id="catatan" placeholder="Tulis catatan kamu..." style="width:100%; height:90px; background:rgba(0,0,0,0.25); border:none; border-radius:8px; color:white; padding:10px; margin-bottom:10px;"></textarea>
+                    <button class="btn-primary" onclick="simpanCatatan()">💾 SIMPAN CATATAN</button>
+                    <div class="sukses" id="catatanTersimpan">✅ Tersimpan!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === DATA SISTEM ===
+        const ADMIN_USER = 'ayam1';
+        const ADMIN_PASS = 'ayam1';
+        let sistemAktif = true;
+        let penggunaSaatIni = null;
+
+        // === PENYIMPANAN DATA ===
+        function ambilDataAkun() {
+            const data = localStorage.getItem('ayamgoreng_akun');
+            return data ? JSON.parse(data) : {
+                'ayam1': { pass: 'ayam1', role: 'admin', perangkat: null }
+            };
+        }
+        function simpanDataAkun(data) {
+            localStorage.setItem('ayamgoreng_akun', JSON.stringify(data));
+        }
+        function ambilStatusSistem() {
+            const status = localStorage.getItem('ayamgoreng_status');
+            sistemAktif = status === null ? true : status === 'true';
+            perbaruiStatusUI();
+        }
+        function simpanStatusSistem() {
+            localStorage.setItem('ayamgoreng_status', sistemAktif);
+        }
+
+        // === STATUS SISTEM ===
+        function perbaruiStatusUI() {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            if (sistemAktif) {
+                dot.classList.remove('off');
+                text.textContent = '✅ Sistem Sedang Aktif';
+                text.style.color = '#00e676';
+            } else {
+                dot.classList.add('off');
+                text.textContent = '⏳ Sistem Sedang Dalam Perawatan';
+                text.style.color = '#ffcc00';
+            }
+        }
+        function ubahStatusSistem(aktif) {
+            if (!penggunaSaatIni || penggunaSaatIni.role !== 'admin') return;
+            sistemAktif = aktif;
+            simpanStatusSistem();
+            perbaruiStatusUI();
+            alert(aktif ? '✅ Sistem telah dibuka untuk semua pengguna!' : '⏳ Sistem telah ditutup. Tidak ada yang bisa login sekarang.');
+        }
+
+        // === LOGIN ===
+        function login() {
+            const user = document.getElementById('inputUser').value.trim();
+            const pass = document.getElementById('inputPass').value;
+            const err = document.getElementById('pesanError');
+            err.style.display = 'none';
+
+            // Cek apakah sistem aktif
+            if (!sistemAktif && user !== ADMIN_USER) {
+                err.textContent = '⏳ Sistem sedang dalam perawatan. Hubungi admin ya!';
+                err.style.display = 'block';
+                return;
+            }
+
+            const daftarAkun = ambilDataAkun();
+            if (!daftarAkun[user]) {
+                err.textContent = '❌ Username tidak ditemukan!';
+                err.style.display = 'block';
+                return;
+            }
+            if (daftarAkun[user].pass !== pass) {
+                err.textContent = '❌ Password salah!';
+                err.style.display = 'block';
+                return;
+            }
+
+            // Cek perangkat
+            const idPerangkat = btoa(navigator.userAgent).slice(0, 30);
+            if (!daftarAkun[user].perangkat) {
+                daftarAkun[user].perangkat = idPerangkat;
+                simpanDataAkun(daftarAkun);
+            } else if (daftarAkun[user].perangkat !== idPerangkat) {
+                err.textContent = '🚫 Akun sudah login di HP lain! 1 akun = 1 HP saja.';
+                err.style.display = 'block';
+                return;
+            }
+
+            // Login berhasil
+            penggunaSaatIni = { nama: user, role: daftarAkun[user].role };
+            bukaDashboard();
+        }
+
+        function bukaDashboard() {
+            document.getElementById('halamanLogin').style.display = 'none';
+            document.getElementById('halamanDashboard').style.display = 'block';
+            
+            document.getElementById('namaPengguna').textContent = penggunaSaatIni.nama;
+            const roleBadge = document.getElementById('rolePengguna');
+            roleBadge.textContent = penggunaSaatIni.role.toUpperCase();
+            roleBadge.className = 'user-role role-' + penggunaSaatIni.role;
+
+            // Tampilkan panel sesuai role
+            if (penggunaSaatIni.role === 'admin') {
+                document.getElementById('panelAdmin').classList.remove('hidden');
+                document.getElementById('panelAkun').classList.remove('hidden');
+            }
+            if (penggunaSaatIni.role === 'reseller') {
+                document.getElementById('panelAkun').classList.remove('hidden');
+            }
+            perbaruiDaftarAkun();
+        }
+
+        function keluar() {
+            penggunaSaatIni = null;
+            document.getElementById('halamanLogin').style.display = 'block';
+            document.getElementById('halamanDashboard').style.display = 'none';
+            document.getElementById('inputUser').value = '';
+            document.getElementById('inputPass').value = '';
+            document.getElementById('pesanError').style.display = 'none';
+        }
+
+        // === KELOLA AKUN ===
+        function buatAkun() {
+            if (!penggunaSaatIni || penggunaSaatIni.role === 'member') {
+                alert('❌ Kamu tidak punya izin membuat akun!');
+                return;
+            }
+            const userBaru = document.getElementById('userBaru').value.trim();
+            const passBaru = document.getElementById('passBaru').value;
+            const roleBaru = document.querySelector('input[name="roleBaru"]:checked').value;
+
+            if (!userBaru || !passBaru) { alert('⚠️ Isi username & password dulu!'); return; }
+            if (userBaru === 'ayam1') { alert('❌ Tidak boleh membuat akun admin utama!'); return; }
+            if (roleBaru === 'admin' && penggunaSaatIni.role !== 'admin') {
+                alert('❌ Reseller tidak boleh membuat akun Admin!');
+                return;
+            }
+
+            const daftarAkun = ambilDataAkun();
+            if (daftarAkun[userBaru]) { alert('❌ Username sudah ada!'); return; }
+
+            daftarAkun[userBaru] = { pass: passBaru, role: roleBaru, perangkat: null };
+            simpanDataAkun(daftarAkun);
+            
+            document.getElementById('userBaru').value = '';
+            document.getElementById('passBaru').value = '';
+            document.getElementById('formBuatAkun').classList.add('hidden');
+            
+            alert(`✅ Akun berhasil dibuat!\n\n👤 Username: ${userBaru}\n🔒 Password: ${passBaru}\n🎖️ Role: ${roleBaru}\n\nBerikan ke pengguna ya!`);
+            perbaruiDaftarAkun();
+        }
+
+        function hapusAkun(nama) {
+            if (!penggunaSaatIni || penggunaSaatIni.role !== 'admin') {
+                alert('❌ Hanya Admin yang boleh menghapus akun!');
+                return;
+            }
+            if (nama === 'ayam1') { alert('❌ Tidak boleh menghapus akun Admin utama!'); return; }
+            if (confirm(`⚠️ Yakin hapus akun "${nama}"? Tindakan tidak bisa dibatalkan!`)) {
+                const daftarAkun = ambilDataAkun();
+                delete daftarAkun[nama];
+                simpanDataAkun(daftarAkun);
+                perbaruiDaftarAkun();
+            }
+        }
+
+        function perbaruiDaftarAkun() {
+            const wadah = document.getElementById('daftarAkun');
+            const daftar = ambilDataAkun();
+            wadah.innerHTML = '';
+            for (let u in daftar) {
+                const hapusBtn = (penggunaSaatIni.role === 'admin' && u !== 'ayam1')
+                    ? `<button class="btn-danger btn-sm" style="padding:3px 8px; font-size:11px;" onclick="hapusAkun('${u}')">Hapus</button>` : '';
+                wadah.innerHTML += `
+                    <div class="account-item">
+                        <span><strong>${u}</strong> · ${daftar[u].role} · ${daftar[u].perangkat ? '✅Aktif' : '⏳Belum'}</span>
+                        ${hapusBtn}
+                    </div>
+                `;
+            }
+        }
+
+        // === SWITCH TAB ===
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab');
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + tabId).classList.add('active');
+            });
+        });
+
+        // === FUNGSI OSINT ===
+        function bukaLink(url, inputId) {
+            const val = document.getElementById(inputId).value.trim();
+            if (!val) { alert('⚠️ Isi data terlebih dahulu!'); return; }
+            window.open(url + encodeURIComponent(val), '_blank');
+        }
+
+        function analisisNomor(n) {
+            let b = n.replace(/\D/g,'');
+            let negara = 'Tidak diketahui', bendera='❓', op='-', awalan='-';
+            if (b.startsWith('62')) b='0'+b.slice(2);
+            if (b[0]==='0' && b.length>=10) {
+                negara='Indonesia'; bendera='🇮🇩'; awalan=b.slice(1,3);
+                const p={'81':'Telkomsel','82':'Telkomsel/By.U','83':'XL Axiata','85':'Indosat/IM3','87':'Tri','89':'Smartfren','84':'Axis'};
+                if (p[awalan]) op=p[awalan];
+            }
+            return `══════════════════════
+📋 HASIL ANALISIS
+══════════════════════
+📥 Input : ${n}
+🔢 Format: ${b}
+🌍 Negara: ${bendera} ${negara}
+🔢 Awalan: ${awalan}
+📡 Operator: ${op}
+🕐 Diperiksa: ${new Date().toLocaleString('id-ID')}
+══════════════════════`;
+        }
+
+        function cekNomor() {
+            const n = document.getElementById('inpNo').value;
+            if (!n) { alert('⚠️ Masukkan nomor!'); return; }
+            const r = document.getElementById('hasilNo');
+            r.textContent = analisisNomor(n);
+            r.classList.add('show');
+        }
+
+        function cekOperator() {
+            cekNomor();
+        }
+
+        function bukaWA() {
+            let n = document.getElementById('inpWA').value.replace(/\D/g,'');
+            if (!n) { alert('⚠️ Masukkan nomor!'); return; }
+            if (n.startsWith('0')) n='62'+n.slice(1);
+            window.open('https://wa.me/'+n, '_blank');
+        }
+
+        function formatNomor() {
+            let n = document.getElementById('inpConv').value.replace(/\D/g,'');
+            if (!n) { alert('⚠️ Masukkan nomor!'); return; }
+            let f0,f62,fint;
+            if (n.startsWith('62')) { f0='0'+n.slice(2); f62=n; fint='+'+n; }
+            else if (n[0]==='0') { f0=n; f62='62'+n.slice(1); fint='+62'+n.slice(1); }
+            else { f0='0'+n; f62=n; fint='+'+n; }
+            const r = document.getElementById('hasilConv');
+            r.textContent = `══════════════════════
+🔄 HASIL KONVERSI
+══════════════════════
+🇮🇩 Lokal  : ${f0}
+🌐 Nasional: ${f62}
+🌍 Int'l   : ${fint}
+══════════════════════`;
+            r.classList.add('show');
+        }
+
+        function cekEmail() {
+            const e = document.getElementById('inpEmail').value.trim();
+            const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+            const r = document.getElementById('hasilEmail');
+            r.textContent = ok ? `✅ VALID\n📧 ${e}` : `❌ TIDAK VALID\n📧 ${e}`;
+            r.style.color = ok ? '#00e676' : '#ff5252';
+            r.classList.add('show');
+        }
+
+        function bukaPeta() {
+            const k = document.getElementById('inpKoord').value.trim();
+            if (!k) { alert('⚠️ Masukkan koordinat!'); return; }
+            window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(k), '_blank');
+        }
+
+        function cariKodePos() {
+            const k = document.getElementById('inpKp').value.trim();
+            if (!k) { alert('⚠️ Masukkan nama daerah/kode pos!'); return; }
+            window.open('https://www.google.com/maps/search/?api=1&query=Kode+Pos+'+encodeURIComponent(k), '_blank');
+        }
+
+        function cekCuaca() {
+            const c = document.getElementById('inpCuaca').value.trim();
+            if (!c) { alert('⚠️ Masukkan nama kota!'); return; }
+            window.open('https://www.google.com/search?q=cuaca+'+encodeURIComponent(c), '_blank');
+        }
+
+        function bukaRute() {
+            const d = document.getElementById('inpDari').value.trim();
+            const k = document.getElementById('inpKe').value.trim();
+            if (!d || !k) { alert('⚠️ Isi asal dan tujuan!'); return; }
+            window.open('https://www.google.com/maps/dir/'+encodeURIComponent(d)+'/'+encodeURIComponent(k), '_blank');
+        }
+
+        function buatPassword() {
+            const c='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=[]{}|';
+            let p='';
+            for(let i=0;i<16;i++) p+=c[Math.floor(Math.random()*c.length)];
+            const r = document.getElementById('hasilPass');
+            r.textContent = `🔑 Password:\n${p}\n\n⚠️ Simpan di tempat aman!`;
+            r.classList.add('show');
+        }
+
+        function enkripTeks() {
+            const t = document.getElementById('inpEnkrip').value;
+            if (!t) { alert('⚠️ Masukkan teks!'); return; }
+            const r = document.getElementById('hasilEnkrip');
+            r.textContent = `🔓 Asli: ${t}\n🔒 Enkrip: ${btoa(t)}`;
+            r.classList.add('show');
+        }
+
+        function dekripTeks() {
+            const t = document.getElementById('inpEnkrip').value.trim();
+            if (!t) { alert('⚠️ Masukkan teks terenkripsi!'); return; }
+            try {
+                const r = document.getElementById('hasilEnkrip');
+                r.textContent = `🔒 Enkrip: ${t}\n🔓 Asli: ${atob(t)}`;
+                r.classList.add('show');
+            } catch { alert('❌ Format tidak valid untuk dekripsi!'); }
+        }
+
+        function simpanCatatan() {
+            const t = document.getElementById('catatan').value;
+            localStorage.setItem('ayamgoreng_catatan', t);
+            const s = document.getElementById('catatanTersimpan');
+            s.style.display='block';
+            setTimeout(()=>s.style.display='none', 2000);
+        }
+
+        // === INISIALISASI ===
+        ambilStatusSistem();
+        document.getElementById('catatan').value = localStorage.getItem('ayamgoreng_catatan') || '';
+    </script>
+</body>
+</html>
